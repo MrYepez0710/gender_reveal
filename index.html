@@ -778,7 +778,7 @@ function updateCamera(dt){
   // carrera
   const rk=ranking(),w=rs.find(r=>r.id===R.winnerId),lead=rk[0];
   let mode='chase';
-  const finishing=(R.L-w.d<55)||w.finished;
+  const finishing=(R.L-lead.d<55)||w.finished;
   const lp=mod(trackD(lead.d),N);
   if(finishing)mode='finish';
   else if(lp>LOOPA-30&&lp<LOOPB+24&&R.t>3)mode='loop';
@@ -905,6 +905,7 @@ function giveItem(k){
 }
 const OBMSG={rattle:n=>`¡${n} chocó con la sonaja gigante! 🪇`,ball:n=>`¡Una pelota gigante golpea a ${n}! 🏐`,blocks:n=>`¡${n} chocó con los bloques! 🧱`};
 function hit(k,kind,msg){
+  if((R.p||0)>.8&&(k.id===R.winnerId||Math.random()<.5)){if(!k.air){k.air=true;k.vy=6}banner(`¡${k.name} lo esquiva de un brinco! 🦘`,k.color);if(R.live)sfx('dodge');return}
   if(k.star>0||k.immune>0){banner(`¡${k.name} es inmune! 😎`,k.color);return}
   if(kind==='spin'){k.spin=1.05;banner(msg||`¡Le dio! ${k.name} da vueltas 💫`,k.color)}else{k.slip=.9;banner(`¡${k.name} resbaló con el pañal! 🤢`,k.color)}
   k.immune=1.9;k.boost=0;if(R.live){sfx('hit');if(k.vis){R.shake=.25;burstAt(k.sx,k.sy-k.sw*.4,12,['#ffd23f','#fff','#ff8c1a'],'star')}}
@@ -925,14 +926,20 @@ function useItem(k){
 }
 function simStep(dt){
   R.t+=dt;const rs=R.racers,w=rs.find(r=>r.id===R.winnerId);
-  const p=targets();
+  const p=targets();R.p=p;
   for(const k of rs){
     k.pd=k.d;
-    const lim=k===w&&p>.75?13:9;let base=V+clamp(k.need*.45,-lim,lim)+Math.sin(R.t*.8+k.ph)*1.1,mult=1;
+    // en la recta final nadie frena: el ganador remonta acelerando, los demás siguen a fondo
+    const hi=k===w?(p>.86?1.2:p>.75?13:9):9,lo=p>.86?-1.2:-9;let base=V+clamp(k.need*.45,lo,hi)+Math.sin(R.t*.8+k.ph)*1.1,mult=1;
+    if(k.fbWait>0){k.fbWait-=dt;if(k.fbWait<=0)k.fb=k.fbDur}if(k.fb>0){k.fb-=dt;mult*=1.22}
     if(k.boost>0)mult*=1.45;if(k.star>0)mult*=1.35;if(k.shrink>0)mult*=.72;
-    let tv=base*mult;if(k.spin>0)tv=8;if(k.slip>0)tv=13;
+    let tv=base*mult,acc=2.2;
+    // remontada final del ganador: la velocidad justa para llegar apenas antes que el mejor de los demás
+    if(k===w&&p>.78&&!k.finished&&k.spin<=0&&k.slip<=0){let tB=1e9,vB=V;for(const o of rs)if(o!==w&&!o.finished){const vo=clamp(o.v,30,V+4),t=(R.L-o.d)/vo;if(t<tB){tB=t;vB=vo}}
+      if(tB<1e9){const vreq=(R.L-k.d)/Math.max(.15,tB-.12);if(vreq>vB*1.16||k.surge){k.surge=true;tv=Math.max(tv,Math.min(vreq*1.02,80));acc=5;k.fb=Math.max(k.fb||0,.2)}}}
+    if(k.spin>0)tv=8;if(k.slip>0)tv=13;
     if(k.finished)tv=Math.max(0,24-(R.t-k.finishT)*8);
-    k.v+=(tv-k.v)*Math.min(1,dt*(k.spin>0||k.slip>0||k.finished?5:2.2));
+    k.v+=(tv-k.v)*Math.min(1,dt*(k.spin>0||k.slip>0||k.finished?5:acc));
     k.d+=k.v*dt;k.wheel+=k.v*dt;
     for(const f of['boost','star','spin','slip','shrink','immune','itemSpin','trick'])if(k[f]>0)k[f]=Math.max(0,k[f]-dt);
     k.laneT-=dt;if(k.laneT<=0){k.laneT=rand(2.5,5);k.tx=rand(-.65,.65)}
@@ -940,7 +947,7 @@ function simStep(dt){
     for(const pd of PADS){const ah=mod(pd.pos-k.d,N);if(ah>2&&ah<35&&k.need>1.5&&!k.finished&&(p<.84||k===w)){k.tx=pd.x;k.laneT=Math.max(k.laneT,1)}}
     k.x+=(k.tx-k.x)*Math.min(1,dt*1.1);
     for(const pd of PADS)if(Math.floor((k.d-pd.pos)/N)!==Math.floor((k.pd-pd.pos)/N)&&Math.abs(k.x-pd.x)<.3&&(p<.86||k===w)){k.boost=Math.max(k.boost,1);if(R.live&&k.vis&&k.dist<30)sfx('boost')}
-    for(const o of OBST)if(Math.floor((k.d-o.pos)/N)!==Math.floor((k.pd-o.pos)/N)&&k!==w&&k.need<-3&&k.star<=0&&k.immune<=0&&!k.finished&&Math.random()<.55)hit(k,'spin',OBMSG[o.type](k.name));
+    for(const o of OBST)if(Math.floor((k.d-o.pos)/N)!==Math.floor((k.pd-o.pos)/N)&&k!==w&&p<.8&&k.need<-3&&k.star<=0&&k.immune<=0&&!k.finished&&Math.random()<.55)hit(k,'spin',OBMSG[o.type](k.name));
     const rh=groundAlt(k.d);
     if(k.air){k.vy-=26*dt;k.y+=k.vy*dt;if(k.y<=rh){k.y=rh;k.air=false;if(R.live&&k.vis)sfx('land');if(k.trickDone){k.trickDone=false;if(p<.86||k===w)k.boost=Math.max(k.boost,.7)}}}
     else{k.y=rh;
@@ -949,7 +956,7 @@ function simStep(dt){
         if(R.live&&k.vis)sfx('jump');break}}}
     // meta: garantía absoluta, nadie cruza antes que el ganador
     if(!k.finished&&k.d>=R.L){
-      if(k!==w&&!w.finished){k.d=R.L-.3;k.v=Math.min(k.v,10)}
+      if(k!==w&&!w.finished){k.d=R.L-.3;k.v=Math.min(k.v,10);R.clampN=(R.clampN||0)+1}
       else{k.finished=true;k.finishT=R.t;if(k===w)onWinner()}
     }
   }
@@ -963,10 +970,10 @@ function simStep(dt){
     if(h.air<=0)for(const k of rs){if(k===h.owner||k.finished||k.air)continue;if(k.pd<h.d&&k.d>=h.d&&Math.abs(k.x-h.x)<.45){
       if(k.need>2){k.air=true;k.vy=6;banner(`¡${k.name} esquiva el pañal de un brinco! 🦘`,k.color);if(R.live)sfx('dodge')}else hit(k,'slip');gone=true;break}}
     if(gone||h.d<minD-50)R.haz.splice(i,1)}
-  if(!R.finalDone&&R.L-w.d<115&&!w.finished){R.finalDone=true;
-    if(Math.random()<.5){w.boost=1.5;banner(`¡¡${w.name} USA SU BIBERÓN SECRETO!! 🍼`,'gold');if(R.live)sfx('boost')}
-    else{w.star=1.6;banner(`¡¡${w.name} SACA LA ESTRELLA!! ⭐`,'gold');if(R.live)sfx('star')}}
   const rk=ranking(),ld=rk[0];
+  // recta final: varios sacan turbo a la vez (sin nombres), el del ganador dura un poco más
+  if(!R.finalA&&R.L-ld.d<175){R.finalA=true;banner('🔥 ¡RECTA FINAL! ¡Todos sacan sus turbos! 🔥','gold');if(R.live)sfx('boost');
+    rk.filter(r=>r!==w&&!r.finished).slice(0,4).forEach(r=>{r.fbWait=rand(.05,1.4);r.fbDur=rand(.7,1.1)})}
   if(ld.id!==R.leaderId){const g=rk[1]?ld.d-rk[1].d:9;if(g>1.2||!R.leaderId){if(R.leaderId&&R.t-R.lastLeadT>2.2&&p<.97&&R.t>4){banner(pick([`¡${ld.name} toma la delantera!`,`¡${ld.name} rebasa! 🔥`,`¡Adelanta ${ld.name}!`,`¡${ld.name} pasa al frente!`]),ld.color);R.lastLeadT=R.t}R.leaderId=ld.id}}
   if(R.live&&!R.loopShown){const lp=mod(trackD(ld.d),N);if(lp>LOOPA&&lp<LOOPA+25){R.loopShown=true;banner('🌀 ¡EL LOOP! 🌀','gold')}}
   if(rk[1]&&Math.abs(rk[0].d-rk[1].d)<1.2)R.closeT+=dt;else R.closeT=0;
@@ -1042,7 +1049,7 @@ function update(dt){
   else if(state==='count'){if(stT>=2.4){state='race';stT=0;CAM.fD=null}}
   if(state==='race'||state==='reveal'){
     const w=R.racers.find(r=>r.id===R.winnerId),rk=ranking();
-    let ts=1;if(!w.finished&&rk[0].d>R.L-24)ts=.3;if(w.finished&&R.t-w.finishT<.5)ts=.3;
+    let ts=1;if(!w.finished&&rk[0].d>R.L-22)ts=.4;if(w.finished&&R.t-w.finishT<.5)ts=.4;
     R.timeScale=lerp(R.timeScale,ts,Math.min(1,dt*7));simStep(dt*R.timeScale);
     ranking().forEach((r,i)=>r.pos=i+1);
     if(R.winT!=null){R.winReal+=dt;if(state==='race'&&R.winReal>3)goReveal()}
