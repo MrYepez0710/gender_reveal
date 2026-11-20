@@ -646,21 +646,36 @@ function buildScenery(){
 }
 
 // --- personajes en 3D ---
-function faceTexture(P){return canvasTex(256,256,(c)=>{c.translate(128,128);c.scale(256/50,256/50);c.lineWidth=2.6;c.strokeStyle=OUT;
-  const kid=isKid(P.type),er=kid?1.25:1,hr=HAIRS[P.hair]||HAIRS[0];
-  if(P.beard){c.fillStyle=hr;c.beginPath();c.moveTo(-21,1);c.quadraticCurveTo(-20,27,0,28);c.quadraticCurveTo(20,27,21,1);c.lineTo(15,5);c.quadraticCurveTo(14,19,0,19);c.quadraticCurveTo(-14,19,-15,5);c.closePath();c.fill();c.stroke()}
-  for(const ex of[-8,8]){c.fillStyle=OUT;ell(c,ex,3,3.1*er,4.2*er);c.fill();c.fillStyle='#fff';circ(c,ex+1.1,1.4,1.3*er);c.fill()}
-  if(P.type==='mujer'||P.type==='nina'){c.lineWidth=1.8;c.beginPath();for(const ex of[-8,8]){c.moveTo(ex+(ex<0?-2:2),-1);c.lineTo(ex+(ex<0?-5:5),-3.5)}c.stroke();c.lineWidth=2.6}
-  c.strokeStyle=hr;c.lineWidth=2.4;c.beginPath();c.moveTo(-11,-5.5);c.quadraticCurveTo(-8,-7.5,-4.5,-6);c.moveTo(11,-5.5);c.quadraticCurveTo(8,-7.5,4.5,-6);c.stroke();c.strokeStyle=OUT;
-  c.fillStyle='rgba(255,110,150,.5)';ell(c,-13,10,4,2.6);c.fill();ell(c,13,10,4,2.6);c.fill();
-  c.lineWidth=2;c.beginPath();c.moveTo(-1,7);c.quadraticCurveTo(1,9,2,7.5);c.stroke();
-  c.fillStyle='#fff';c.beginPath();c.moveTo(-6,12);c.quadraticCurveTo(0,19,6,12);c.closePath();c.fill();c.lineWidth=2.2;c.stroke();
-  if(P.glasses){c.lineWidth=2.4;c.fillStyle='rgba(200,230,255,.3)';circ(c,-8,3,7);c.fill();c.stroke();circ(c,8,3,7);c.fill();c.stroke();c.beginPath();c.moveTo(-1.5,2);c.lineTo(1.5,2);c.stroke()}})}
+function faceTexture(P){return canvasTex(512,512,(c)=>{c.translate(256,256);c.scale(512/50,512/50);c.lineWidth=2.4;c.strokeStyle=OUT;c.lineJoin='round';c.lineCap='round';
+  const kid=isKid(P.type),fem=P.type==='mujer'||P.type==='nina',er=kid?1.3:1.1,hr=HAIRS[P.hair]||HAIRS[0],st=P.style;
+  // fleco del color del cabello (según peinado)
+  c.fillStyle=hr;
+  if(st==='picos'){c.beginPath();c.moveTo(-24,-9);for(let i=0;i<=8;i++){c.lineTo(-24+i*6,i%2?-11:-19)}c.lineTo(24,-25);c.lineTo(-24,-25);c.closePath();c.fill()}
+  else if(st==='rizado'){for(let i=0;i<7;i++){circ(c,-18+i*6,-15+(i%2)*2.5,5.2);c.fill()}c.fillRect(-24,-25,48,10)}
+  else if(st==='calvo'){}
+  else if(st==='gorra'){c.fillRect(-24,-25,48,12)}
+  else if(fem){c.beginPath();c.moveTo(-25,-25);c.lineTo(25,-25);c.lineTo(25,-6);c.quadraticCurveTo(14,-14,4,-11);c.quadraticCurveTo(-4,-19,-12,-10);c.quadraticCurveTo(-19,-12,-25,-4);c.closePath();c.fill()}
+  else{c.beginPath();c.moveTo(-25,-25);c.lineTo(25,-25);c.lineTo(25,-11);c.quadraticCurveTo(10,-16,0,-13);c.quadraticCurveTo(-10,-16,-25,-11);c.closePath();c.fill()}
+  // barba
+  if(P.beard){c.fillStyle=hr;c.beginPath();c.moveTo(-20,3);c.quadraticCurveTo(-19,25,0,25);c.quadraticCurveTo(19,25,20,3);c.lineTo(14,6);c.quadraticCurveTo(13,17,0,17);c.quadraticCurveTo(-13,17,-14,6);c.closePath();c.fill();c.stroke()}
+  // ojos
+  for(const ex of[-7.5,7.5]){c.fillStyle='#fff';ell(c,ex,2,4.2*er,5*er);c.fill();c.lineWidth=1.6;c.stroke();c.fillStyle=OUT;ell(c,ex+.6,2.6,2.6*er,3.4*er);c.fill();c.fillStyle='#fff';circ(c,ex+1.6,1,1.1*er);c.fill()}
+  if(fem){c.lineWidth=1.8;c.beginPath();for(const ex of[-7.5,7.5]){const s=ex<0?-1:1;c.moveTo(ex+s*3.2,-1.5);c.lineTo(ex+s*6,-4.5);c.moveTo(ex+s*1.2,-2.6);c.lineTo(ex+s*2.6,-6)}c.stroke()}
+  // cejas
+  c.strokeStyle=st==='calvo'?shadeHex(hr,-.2):hr;c.lineWidth=2.6;c.beginPath();c.moveTo(-12,-6.5);c.quadraticCurveTo(-8,-9,-4,-7);c.moveTo(12,-6.5);c.quadraticCurveTo(8,-9,4,-7);c.stroke();c.strokeStyle=OUT;
+  // mejillas, nariz, boca
+  c.fillStyle='rgba(255,100,140,.55)';ell(c,-13,10,4,2.6);c.fill();ell(c,13,10,4,2.6);c.fill();
+  c.lineWidth=1.8;c.beginPath();c.moveTo(-1,7);c.quadraticCurveTo(1.5,9.5,2.5,7.5);c.stroke();
+  c.fillStyle='#fff';c.beginPath();c.moveTo(-6,12);c.quadraticCurveTo(0,20,6,12);c.closePath();c.fill();c.lineWidth=2;c.stroke();
+  c.fillStyle='#ff7b9c';c.beginPath();c.moveTo(-3,15.6);c.quadraticCurveTo(0,18.2,3,15.6);c.quadraticCurveTo(0,14.6,-3,15.6);c.fill();
+  // lentes
+  if(P.glasses){c.lineWidth=2.4;c.fillStyle='rgba(200,230,255,.25)';rr(c,-14.5,-4,13,12,4);c.fill();c.stroke();rr(c,1.5,-4,13,12,4);c.fill();c.stroke();c.beginPath();c.moveTo(-1.5,1);c.lineTo(1.5,1);c.moveTo(-14.5,0);c.lineTo(-21,-1);c.moveTo(14.5,0);c.lineTo(21,-1);c.stroke()}
+})}
 function numTex(n,col){return canvasTex(128,128,c=>{c.fillStyle='#fff';circ(c,64,64,60);c.fill();c.lineWidth=8;c.strokeStyle=OUT;c.stroke();c.font='80px "Lilita One",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillStyle=col;c.fillText(n,64,70)})}
 function makeRacer3D(r){
   const P=r.P,kid=isKid(P.type),col=new THREE.Color(r.color),dk=col.clone().multiplyScalar(.55);
   const g=new THREE.Group(),body=new THREE.Group();g.add(body);
-  const mBody=toon(r.color),mDark=toon('#'+dk.getHexString()),mTire=toon('#262633'),mSkin=toon(SKINS[P.skin]||SKINS[1]),mHair=toon(HAIRS[P.hair]||HAIRS[0]),mWhite=toon('#ffffff'),mGrey=toon('#9ca3af');
+  const mBody=toon(r.color),mDark=toon('#'+dk.getHexString()),mTire=toon('#262633'),mSkin=lamb(SKINS[P.skin]||SKINS[1],{emissive:new THREE.Color(SKINS[P.skin]||SKINS[1]).multiplyScalar(.55)}),mHair=toon(HAIRS[P.hair]||HAIRS[0]),mWhite=toon('#ffffff'),mGrey=toon('#9ca3af');
   const add=(geo,mat,x,y,z,parent=body,ol=0)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);parent.add(m);if(ol)outlineOf(m,ol);return m};
   // chasis
   const ch=add(new THREE.BoxGeometry(1.5,.38,2.3),mBody,0,.5,0,body,1.06);
@@ -681,10 +696,10 @@ function makeRacer3D(r){
   // piloto
   const ks=kid?.82:1,torso=add(new THREE.CylinderGeometry(.3*ks,.4*ks,.75*ks,12),mBody,0,.95+.35*ks,-.2,body,1.07);
   for(const s of[-1,1]){const arm=add(new THREE.CylinderGeometry(.09,.09,.75,6),mBody,s*.3,1.15,.15);arm.rotation.x=1.2}
-  const hr=kid?.5:.44,head=new THREE.Group();head.position.set(0,.95+.75*ks+hr*.85,-.2);body.add(head);
-  const hs=new THREE.Mesh(new THREE.SphereGeometry(hr,22,16),mSkin);head.add(hs);outlineOf(hs,1.06);
+  const hr=kid?.62:.56,head=new THREE.Group();head.position.set(0,.95+.75*ks+hr*.85,-.2);body.add(head);
+  const skc=new THREE.Color(SKINS[P.skin]||SKINS[1]);const hs=new THREE.Mesh(new THREE.SphereGeometry(hr,24,18),lamb('#'+skc.getHexString(),{emissive:skc.clone().multiplyScalar(.55)}));head.add(hs);outlineOf(hs,1.06);
   for(const s of[-1,1]){const e=new THREE.Mesh(new THREE.SphereGeometry(hr*.22,8,6),mSkin);e.position.set(s*hr*.98,-hr*.05,0);head.add(e)}
-  const face=new THREE.Mesh(new THREE.SphereGeometry(hr*1.012,24,16,Math.PI/2-1.05,2.1,Math.PI/2-1.05,2.1),new THREE.MeshBasicMaterial({map:faceTexture(P),transparent:true,alphaTest:.3}));face.rotation.y=-Math.PI/2;head.add(face);
+  const face=new THREE.Mesh(new THREE.SphereGeometry(hr*1.012,28,20,Math.PI/2-1.1,2.2,Math.PI/2-1.1,2.2),new THREE.MeshBasicMaterial({map:faceTexture(P),transparent:true,alphaTest:.25}));head.add(face);r.headR=hr;r.headObj=head;
   const st=P.style;
   const cap=(thetaLen=Math.PI*.55,mat=mHair,tilt=-.35,sc=1.07)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(hr*sc,22,14,0,Math.PI*2,0,thetaLen),mat);m.rotation.x=tilt;head.add(m);outlineOf(m,1.04);return m};
   if(st==='calvo'){const t=new THREE.Mesh(new THREE.TorusGeometry(hr*.97,hr*.17,8,20,Math.PI),mHair);t.rotation.x=Math.PI/2;t.rotation.z=Math.PI;t.position.y=-hr*.05;head.add(t)}
@@ -774,15 +789,37 @@ function updateCamera(dt){
   if(R.t<5){const last=rk[rk.length-1],u=R.t/5,e=u*u*(3-2*u);want=lerp(last.d,lead.d,e)}
   if(CAM.fD==null||CAM.cut)CAM.fD=want;
   CAM.fD+=lead.v*dt*R.timeScale;CAM.fD=lerp(CAM.fD,want,Math.min(1,dt*2.5));
-  const port=W<H;setCam(chaseTarget(CAM.fD,port?10:dist,port?5.2:CAM_H,lead.x*LAT*.35),Math.min(1,dt*6));
+  // director: cambia de toma cada pocos segundos
+  const sh=R.shot;
+  if(!sh||CAM.cut||R.t-sh.t0>sh.dur||(sh.type==='trackside'&&lead.d>sh.d0+14))pickShot(lead);
+  const port=W<H,lat=lead.x*LAT,k=Math.min(1,dt*6),fD=CAM.fD,S_=R.shot;
+  const F=d=>frameAt(trackD(d));
+  switch(S_.type){
+    case'front':{const a=F(fD+(port?8:10)),b=F(fD-4);setCam({pos:a.P.clone().addScaledVector(a.Uc,2.6).addScaledVector(a.X,lat*.5),look:b.P.clone().addScaledVector(b.Uc,1.3).addScaledVector(b.X,lat*.5),up:a.Uc.clone()},k);break}
+    case'side':{const a=F(fD-2),b=F(fD-3);setCam({pos:a.P.clone().addScaledVector(a.X,(HALFW+6)*S_.side).addScaledVector(a.Uc,2.8),look:b.P.clone().addScaledVector(b.Uc,1),up:a.Uc.clone()},k);break}
+    case'drone':{const a=F(fD-14),b=F(fD+6);setCam({pos:a.P.clone().addScaledVector(a.Uc,24),look:b.P,up:a.Uc.clone()},k);break}
+    case'pack':{const f=rk[Math.min(3,rk.length-1)];S_.pd=S_.pd==null?f.d:lerp(S_.pd+f.v*dt*R.timeScale,f.d,Math.min(1,dt*2));setCam(chaseTarget(S_.pd,8,3.6,f.x*LAT*.3),k);break}
+    case'trackside':{const a=F(S_.d0),c=lead.m?lead.m.g.position.clone():F(lead.d).P;setCam({pos:a.P.clone().addScaledVector(a.X,(HALFW+5)*S_.side).addScaledVector(a.Uc,2.4),look:c.addScaledVector(a.Uc,1.2),up:a.Uc.clone()},k);break}
+    case'heli':{S_.ang+=dt*.45;const a=F(fD),c=a.P.clone().addScaledVector(a.X,lat);setCam({pos:c.clone().addScaledVector(a.X,Math.cos(S_.ang)*15).addScaledVector(a.T,Math.sin(S_.ang)*15).addScaledVector(a.Uc,12),look:c.clone().addScaledVector(a.Uc,1),up:a.Uc.clone()},k);break}
+    default:setCam(chaseTarget(fD,port?10:dist,port?5.2:CAM_H,lat*.35),k);
+  }
+}
+const SHOTS=[['chase',2.2],['front',2.2],['side',1.5],['drone',1],['pack',1.2],['trackside',1.5],['heli',1]];
+function pickShot(lead){
+  const prev=R.shot&&R.shot.type;let t='chase';
+  for(let i=0;i<10;i++){let x=Math.random()*SHOTS.reduce((a,b)=>a+b[1],0);for(const[n,w]of SHOTS){x-=w;if(x<=0){t=n;break}}if(t!==prev)break}
+  const sh={type:t,t0:R.t,dur:rand(4,6),side:Math.random()<.5?-1:1,ang:rand(0,Math.PI*2)};
+  if(t==='trackside'){sh.d0=lead.d+rand(50,70);const lp=mod(trackD(sh.d0),N);if(lp>LOOPA-45&&lp<LOOPB+30)sh.type='side'}
+  if(R.t<6){sh.type='chase';sh.dur=6-R.t}
+  R.shot=sh;CAM.cut=true;
 }
 const CAM_DIST=13.5,CAM_H=6.2;
 
 // --- proyección a pantalla para etiquetas y partículas ---
 function toScreen(v){_v.copy(v).project(camera);if(_v.z>1||_v.z<-1)return null;return{x:(_v.x*.5+.5)*W,y:(-_v.y*.5+.5)*H}}
 function projectRacers(){
-  for(const r of R.racers){r.vis=false;const m=r.m;if(!m)continue;
-    const head=new THREE.Vector3(0,2.75,-.2);m.body.localToWorld(head);const base=new THREE.Vector3(0,0,0);m.g.localToWorld(base);const side=new THREE.Vector3(1.2,0,0);m.g.localToWorld(side);
+  for(const r of R.racers){r.vis=false;const m=r.m;if(!m||!m.g.visible)continue;
+    const head=new THREE.Vector3(0,(r.headR||.5)*1.6,0);(r.headObj||m.body).localToWorld(head);const base=new THREE.Vector3(0,0,0);m.g.localToWorld(base);const side=new THREE.Vector3(1.2,0,0);m.g.localToWorld(side);
     const dist=camera.position.distanceTo(base);const toR=base.clone().sub(camera.position);const fwd=new THREE.Vector3();camera.getWorldDirection(fwd);if(toR.dot(fwd)<1)continue;
     const a=toScreen(head),b=toScreen(base),c=toScreen(side);if(!a||!b||!c)continue;
     r.vis=dist<160;r.sx=b.x;r.sy=b.y;r.sw=Math.max(4,Math.hypot(c.x-b.x,c.y-b.y)*2);r.hx=a.x;r.hy=a.y;r.dist=dist}

@@ -15,7 +15,7 @@ Botón ⛶ / tecla `F`: pantalla completa · `M`: sonido · teclas `1`–`8` en 
 - Loop vertical con cámara de transmisión lateral cada vez que el líder lo cruza.
 - Obstáculos: sonajas gigantes giratorias, pelotas de playa rebotando, cubos ABC que suben y bajan.
 - Flechas turbo antes del loop y en la recta trasera; dos rampas de salto con trucos en el aire.
-- Cámara en la meta para ver el remate final de frente.
-- Personajes 3D con su peinado, color de piel y cara.
+- Director de cámaras tipo TV: cambia de toma cada 4–6 s (persecución, frontal para ver las caras, lateral, dron, pelotón, cámara fija junto a la pista y helicóptero), además de las tomas especiales del loop y de la meta.
+- Personajes 3D con cara dibujada según su configuración: ojos, pestañas, cejas y fleco del color de su cabello, lentes, barba, peinado y tono de piel.
 
 Prueba interna: en la consola, `__simTest(300)` simula 300 carreras y confirma que siempre gana el elegido.
