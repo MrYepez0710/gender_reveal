@@ -98,7 +98,7 @@ canvas{display:block}
 @keyframes ann{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.05)}}
 
 /* ---------- textos de carrera ---------- */
-#banner{position:fixed;left:50%;top:19vh;transform:translateX(-50%);z-index:15;pointer-events:none;white-space:nowrap;max-width:96vw;overflow:hidden;text-overflow:ellipsis;
+#banner{position:fixed;left:50%;top:21vh;transform:translateX(-50%);z-index:15;pointer-events:none;white-space:nowrap;max-width:96vw;overflow:hidden;text-overflow:ellipsis;
   font-family:'Lilita One',sans-serif;font-size:min(5vh,5.4vw);color:#fff;padding:.2em .8em .28em;border-radius:.6em;background:rgba(43,27,61,.82);border:.08em solid #fff;text-shadow:0 .07em 0 var(--ink);opacity:0}
 #banner.gold{background:linear-gradient(180deg,#ffdf5e,#ff8c1a)}
 #banner.pop{animation:ban 2.1s ease forwards}
@@ -446,6 +446,7 @@ function buildSprites(){
 }
 
 // ---------------- pista pseudo-3D ----------------
+const CAMDIST=13,CAMH_RACE=1250;
 const U=200,ROADW=2000,CAMH=700,DEPTH=1/Math.tan(50*Math.PI/180),DRAW=230,V=46,START=12;
 let segs=[],N=0,crests=[],BOXPOS=[];
 function lastY(){return segs.length?segs[segs.length-1].p2.w.y:0}
@@ -562,25 +563,35 @@ function drawWorld(t){
     else if(o.kind==='racer')drawRacer(o.r,o.p,t);
   }
 }
+const MEDAL=['#ffd23f','#d9dee8','#e3a06a'];
+function drawCrown(c,x,y,w){c.save();c.translate(x,y);c.scale(w/40,w/40);c.fillStyle='#ffd23f';c.strokeStyle=OUT;c.lineWidth=2.6;c.lineJoin='round';
+  c.beginPath();c.moveTo(-18,10);c.lineTo(-20,-10);c.lineTo(-9,0);c.lineTo(0,-16);c.lineTo(9,0);c.lineTo(20,-10);c.lineTo(18,10);c.closePath();c.fill();c.stroke();
+  c.fillStyle='#ff4fa0';circ(c,0,3,3.5);c.fill();c.fillStyle='#60a5fa';circ(c,-10,4,2.6);c.fill();circ(c,10,4,2.6);c.fill();c.restore()}
 function drawRacer(r,p,t){
-  const dw=2.5*U*p.sc*K,sc=dw/112*(r.shrink>0?.6:1),fade=clamp((p.rel-3)/2.5,0,1);
+  const dw=2.5*U*p.sc*K,sc=dw/112*(r.shrink>0?.6:1),fade=state==='race'||state==='reveal'?clamp((p.rel-5.5)/3,0,1):clamp((p.rel-3)/2.5,0,1);
   if(fade<=0)return;
   ctx.save();ctx.globalAlpha=fade;ctx.beginPath();ctx.rect(0,0,W,p.clip);ctx.clip();
   const alt=Math.max(0,r.y-roadH(r.d)),sh=1/(1+alt*.3);
+  if(r.pos===1&&state!=='title'&&state!=='select'){const g=ctx.createRadialGradient(p.x,p.gy,0,p.x,p.gy,dw*.9);g.addColorStop(0,'rgba(255,215,64,.75)');g.addColorStop(1,'rgba(255,215,64,0)');ctx.fillStyle=g;ell(ctx,p.x,p.gy,dw*.95,dw*.22);ctx.fill()}
   ctx.fillStyle='rgba(20,10,40,.28)';ell(ctx,p.x,p.gy,dw*.5*sh,dw*.08*sh);ctx.fill();
   ctx.translate(p.x,p.y);
-  let rot=clamp(-(R.baseCurve||0)*.04+(r.tx-r.x)*.25,-.18,.18);
+  let rot=clamp(-(R.baseCurve||0)*.025+(r.tx-r.x)*.15,-.1,.1);
   if(r.spin>0)rot+=(1-r.spin/1.05)*Math.PI*4;if(r.slip>0)rot+=Math.sin(t*28)*.25;if(r.trick>0)rot+=(1-r.trick/.8)*Math.PI*2*r.trickDir;
   ctx.translate(0,-50*sc);ctx.rotate(rot);ctx.translate(0,50*sc);
   if(r.v>3)ctx.translate(0,Math.sin(t*26+r.ph)*1.2*sc);
   ctx.scale(sc,sc);drawKartBack(ctx,r,t);
   ctx.restore();
   r.vis=fade>.5;r.sx=p.x;r.sy=p.y;r.sw=dw;
-  if(dw>34){const fs=clamp(dw*.17,10,26*US),ty=p.y-(isKid(r.P.type)?122:128)*sc-fs*.9;ctx.save();ctx.beginPath();ctx.rect(0,0,W,p.clip);ctx.clip();
-    ctx.font=`${fs}px "Lilita One",sans-serif`;const tw=ctx.measureText(r.name).width+fs*.9;ctx.globalAlpha=clamp((dw-34)/30,0,1)*fade;
-    ctx.fillStyle=r.color;ctx.strokeStyle='#fff';ctx.lineWidth=Math.max(1.5,fs*.12);rr(ctx,p.x-tw/2,ty-fs*.62,tw,fs*1.25,fs*.45);ctx.fill();ctx.stroke();
+  if(dw>26){const racing=r.pos&&state!=='title'&&state!=='select',fs=clamp(dw*.17,11,26*US),ty=p.y-(isKid(r.P.type)?122:128)*sc-fs*.9;
+    ctx.save();ctx.beginPath();ctx.rect(0,0,W,p.clip);ctx.clip();ctx.globalAlpha=clamp((dw-26)/24,0,1)*fade;
+    ctx.font=`${fs}px "Lilita One",sans-serif`;const nw=ctx.measureText(r.name).width,bd=racing?fs*1.25:0,tw=nw+fs*.9+bd,x0=p.x-tw/2;
+    ctx.fillStyle=r.color;ctx.strokeStyle='#fff';ctx.lineWidth=Math.max(1.5,fs*.12);rr(ctx,x0,ty-fs*.62,tw,fs*1.25,fs*.62);ctx.fill();ctx.stroke();
     ctx.beginPath();ctx.moveTo(p.x-fs*.3,ty+fs*.62);ctx.lineTo(p.x+fs*.3,ty+fs*.62);ctx.lineTo(p.x,ty+fs*.95);ctx.closePath();ctx.fillStyle=r.color;ctx.fill();
-    ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(r.name,p.x,ty+fs*.04);ctx.restore()}
+    ctx.textBaseline='middle';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(r.name,x0+bd+(tw-bd)/2,ty+fs*.04);
+    if(racing){const cx=x0+fs*.62,cr=fs*.78;ctx.fillStyle=MEDAL[r.pos-1]||'#fff';ctx.strokeStyle=OUT;ctx.lineWidth=Math.max(1.5,fs*.1);circ(ctx,cx,ty,cr);ctx.fill();ctx.stroke();
+      ctx.fillStyle=OUT;ctx.font=`${fs*.95}px "Lilita One",sans-serif`;ctx.fillText(r.pos,cx,ty+fs*.06);
+      if(r.pos===1)drawCrown(ctx,p.x,ty-fs*1.05+Math.sin(t*5)*fs*.12,fs*1.6)}
+    ctx.restore()}
 }
 
 // ---------------- estado global ----------------
@@ -622,7 +633,7 @@ function newRace(live,order,winnerId){
   Rc.racers=order.map((P,slot)=>{const k=mkRacer(P,slot,cols[slot]);k.d=-3-Math.floor(slot/2)*6-(slot%2)*2.5;k.x=slot%2?.42:-.42;k.tx=k.x;return k});
   makePlans(Rc,winnerId);
   let id=0;for(const pos of BOXPOS)for(const x of[-.6,-.2,.2,.6])Rc.boxes.push({pos,x,cool:0,id:id++});
-  Rc.camD=Math.min(...Rc.racers.map(r=>r.d))-30;Rc.camH=3200;
+  Rc.camD=Math.min(...Rc.racers.map(r=>r.d))-30;Rc.camH=3200;Rc.fD=null;Rc.camDist=null;
   return Rc;
 }
 
@@ -675,9 +686,9 @@ function simStep(dt){
     k.v+=(tv-k.v)*Math.min(1,dt*(k.spin>0||k.slip>0||k.finished?5:2.2));
     k.d+=k.v*dt;k.wheel+=k.v*dt;
     for(const f of['boost','star','spin','slip','shrink','immune','itemSpin','trick'])if(k[f]>0)k[f]=Math.max(0,k[f]-dt);
-    k.laneT-=dt;if(k.laneT<=0){k.laneT=rand(1.5,4);k.tx=rand(-.7,.7)}
+    k.laneT-=dt;if(k.laneT<=0){k.laneT=rand(2.5,5);k.tx=rand(-.65,.65)}
     for(const o of rs)if(o!==k&&o.d>k.d&&o.d-k.d<5&&Math.abs(o.x-k.tx)<.3){k.tx=clamp(o.x+(o.x>0?-.5:.5),-.75,.75);k.laneT=rand(1,2.5)}
-    k.x+=(k.tx-k.x)*Math.min(1,dt*1.6);
+    k.x+=(k.tx-k.x)*Math.min(1,dt*1.1);
     const rh=roadH(k.d);
     if(k.air){k.vy-=26*dt;k.y+=k.vy*dt;if(k.y<=rh){k.y=rh;k.air=false;if(R.live&&k.vis)sfx('land');if(k.trickDone){k.trickDone=false;k.boost=Math.max(k.boost,.7)}}}
     else{k.y=rh;
@@ -728,8 +739,30 @@ function drawParts(){
 }
 
 // ---------------- HUD ----------------
+function faceDisc(r,x,y,rad,ring){ctx.save();ctx.fillStyle=r.color;ctx.strokeStyle=ring||'#fff';ctx.lineWidth=Math.max(2,rad*.16);circ(ctx,x,y,rad);ctx.fill();ctx.save();circ(ctx,x,y,rad);ctx.clip();ctx.translate(x,y+rad*.12);const s=rad/26;ctx.scale(s,s);drawFace(ctx,r.P,r.color,gt);ctx.restore();circ(ctx,x,y,rad);ctx.stroke();ctx.restore()}
+function drawProgress(rk){
+  // barra de "distancia al líder": el líder a la derecha y los demás según cuántos metros van detrás
+  const bw=Math.min(W*.7,780*US),x0=(W-bw)/2,y=H-30*US,rad=Math.max(11,15*US),lead=rk[0];
+  const span=Math.max(30,Math.min(90,(lead.d-rk[rk.length-1].d)*1.15));
+  ctx.fillStyle='rgba(43,27,61,.72)';rr(ctx,x0-30*US,y-25*US,bw+60*US,50*US,25*US);ctx.fill();
+  const g=ctx.createLinearGradient(x0,0,x0+bw,0);g.addColorStop(0,'rgba(255,255,255,.15)');g.addColorStop(1,'rgba(255,210,63,.9)');ctx.fillStyle=g;rr(ctx,x0,y-3*US,bw,6*US,3*US);ctx.fill();
+  ctx.font=`${11*US}px "Lilita One",sans-serif`;ctx.fillStyle='rgba(255,255,255,.75)';ctx.textBaseline='middle';
+  for(let m=10;m<span;m+=10){const x=x0+bw*(1-m/span);ctx.fillRect(x-1,y-7*US,2,14*US)}
+  const rs=rk.slice().reverse();
+  for(const r of rs){const gap=r.finished&&r!==lead?0:Math.max(0,lead.d-r.d),x=x0+bw*(1-clamp(gap/span,0,1)),l1=r===lead;
+    faceDisc(r,x,y,l1?rad*1.3:rad,l1?'#ffd23f':'#fff');
+    if(l1)drawCrown(ctx,x,y-rad*1.8,rad*1.6);
+    else{ctx.fillStyle='#fff';ctx.strokeStyle=OUT;ctx.lineWidth=3*US;ctx.font=`${10*US}px "Lilita One",sans-serif`;ctx.textAlign='center';const t=r.pos+'º';ctx.strokeText(t,x+rad*.75,y+rad*.8);ctx.fillText(t,x+rad*.75,y+rad*.8)}}
+}
 function drawHUD(){
   const rk=ranking(),n=rk.length,lead=rk[0],lap=Math.min(R.laps,Math.floor(Math.max(0,lead.d)/N)+1);
+  rk.forEach((r,i)=>r.pos=i+1);
+  drawProgress(rk);
+  { // letrero de líder
+    const fs=17*US;ctx.font=`${fs}px "Lilita One",sans-serif`;const txt='LÍDER: '+lead.name,tw=ctx.measureText(txt).width+fs*3.2,y=64*US,x=W/2-tw/2;
+    ctx.fillStyle=lead.color;ctx.strokeStyle='#ffd23f';ctx.lineWidth=3*US;rr(ctx,x,y,tw,fs*1.9,fs*.95);ctx.fill();ctx.stroke();
+    faceDisc(lead,x+fs*1.05,y+fs*.95,fs*.78,'#ffd23f');ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(txt,x+fs*2.15,y+fs*1.0);
+  }
   const lw=180*US;ctx.fillStyle='rgba(43,27,61,.78)';rr(ctx,W/2-lw/2,10*US,lw,48*US,18*US);ctx.fill();
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#ffd23f';ctx.font=`${14*US}px "Lilita One",sans-serif`;ctx.fillText('VUELTA',W/2-36*US,35*US);
   ctx.fillStyle='#fff';ctx.font=`${30*US}px "Lilita One",sans-serif`;ctx.fillText(`${lap}/${R.laps}`,W/2+28*US,36*US);
@@ -760,11 +793,17 @@ function update(dt){
     const w=R.racers.find(r=>r.id===R.winnerId),rk=ranking();
     let ts=1;if(!w.finished&&rk[0].d>R.L-24)ts=.3;if(w.finished&&R.t-w.finishT<.5)ts=.3;
     R.timeScale=lerp(R.timeScale,ts,Math.min(1,dt*7));simStep(dt*R.timeScale);
-    let focus=rk.length<=3?rk[rk.length-1]:rk[2];
-    let tgtD=focus.d-7.5,tgtX=focus.x*ROADW*.55;
-    if(R.t<5){const last=rk[rk.length-1],u=R.t/5;tgtD=lerp(last.d-7.5,tgtD,u*u)}
-    if(R.L-w.d<70||w.finished){tgtD=w.d-6.5;tgtX=w.x*ROADW*.6}
-    R.camD=lerp(R.camD,tgtD,Math.min(1,dt*3));R.camX=lerp(R.camX,tgtX,Math.min(1,dt*2));R.camH=lerp(R.camH,CAMH,Math.min(1,dt*2));
+    rk.forEach((r,i)=>r.pos=i+1);
+    // cámara tipo TV: detrás del líder (y del ganador en el remate final)
+    let focus=rk[0],dist=CAMDIST,camH=CAMH_RACE;
+    if(R.L-w.d<70||w.finished){focus=w;dist=9;camH=CAMH*1.1}
+    let want=focus.d;
+    if(R.t<5){const last=rk[rk.length-1],u=R.t/5,e=u*u*(3-2*u);want=lerp(last.d,focus.d,e);dist=lerp(7.5,dist,e)}
+    if(R.fD==null)R.fD=want;
+    R.fD+=focus.v*dt*R.timeScale;R.fD=lerp(R.fD,want,Math.min(1,dt*2.5));
+    R.camDist=R.camDist==null?dist:lerp(R.camDist,dist,Math.min(1,dt*1.5));
+    R.camD=R.fD-R.camDist;
+    R.camX=lerp(R.camX,focus.x*ROADW*.3,Math.min(1,dt*.8));R.camH=lerp(R.camH,camH,Math.min(1,dt*1.5));
     if(R.winT!=null){R.winReal+=dt;if(state==='race'&&R.winReal>3)goReveal()}
     for(const k of R.racers){if(!k.vis)continue;
       if(k.v>10&&!k.air&&Math.random()<.5)parts.push({x:k.sx+rand(-.35,.35)*k.sw,y:k.sy-k.sw*.05,vx:rand(-40,40)*US,vy:rand(10,50)*US,life:.45,max:.45,col:'#efe8da',sz:k.sw*.05,grow:k.sw*.25,type:'dust'});
